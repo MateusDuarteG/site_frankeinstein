@@ -1,71 +1,40 @@
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, request, jsonify
 from flask_mail import Mail, Message
 from dotenv import load_dotenv
 import os
 
+# Carregar variáveis de ambiente
+load_dotenv()
+
 app = Flask(__name__)
 
-load_dotenv()
-print(os.getenv("MAIL_USERNAME"))
-print(os.getenv("MAIL_PASSWORD"))
-
-# Configurações de e-mail usando variáveis de ambiente
-app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
-app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
-
-# Configuração do servidor de e-mail
+# Configurações de e-mail
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
+app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_USERNAME')
 
 mail = Mail(app)
 
-# --- Rotas de agentes (mantém igual) ---
-agent = [
-    {'id': 1, 'Nome': 'Mateus Duarte', 'Matricula': '147884'},
-    {'id': 2, 'Nome': 'Pricila Brito', 'Matricula': '1456788'},
-    {'id': 3, 'Nome': 'Romeu Zelito', 'Matricula': '1456458'}
-]
-
-
-@app.route('/agent', methods=['GET'])
-def obter_agent():
-    return jsonify(agent)
-
-
-@app.route('/agent/<int:id>', methods=['GET'])
-def obter_agent_id(id):
-    for agents in agent:
-        if agents.get('id') == id:
-            return jsonify(agents)
-
-
-@app.route('/agent/<int:id>', methods=['PUT'])
-def editar_agent_id(id):
-    agent_alterado = request.get_json()
-    for indice, agents in enumerate(agent):
-        if agents.get('id') == id:
-            agent[indice].update(agent_alterado)
-            return jsonify(agent[indice])
-
-
-@app.route('/agent', methods=['POST'])
-def incluir_novo_agent():
-    novo_agents = request.get_json()
-    agent.append(novo_agents)
-    return jsonify(agent)
-
-
-@app.route('/agent/<int:id>', methods=['DELETE'])
-def excluir_agnt(id):
-    for indice, agents in enumerate(agent):
-        if agents.get('id') == id:
-            del agent[indice]
-    return jsonify(agent)
-
-# --- Nova rota de contato ---
-# Rota para página inicial
+# Endpoint para enviar e-mail
+@app.route('/send-email', methods=['POST'])
+def send_email():
+    data = request.get_json()
+    if not data or "to" not in data or "subject" not in data or "body" not in data:
+        return jsonify({"error": "Campos obrigatórios: to, subject, body"}), 400
+    
+    try:
+        msg = Message(
+            subject=data["subject"],
+            recipients=[data["to"]],
+            body=data["body"]
+        )
+        mail.send(msg)
+        return jsonify({"message": f"E-mail enviado para {data['to']} com sucesso!"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route('/')
@@ -125,6 +94,5 @@ def contato():
     # Se for GET, renderiza a página de contato
     return render_template('contato.html')
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     app.run(debug=True)
