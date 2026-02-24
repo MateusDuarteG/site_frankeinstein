@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_mail import Mail, Message
 from dotenv import load_dotenv
 import os
