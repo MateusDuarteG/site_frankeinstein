@@ -2,9 +2,11 @@ from flask import Flask, render_template, request, jsonify
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 
+
 @app.route("/")
 def index():
     return render_template("index.html")
+
 
 @app.route("/projetos")
 def projetos():
@@ -26,6 +28,7 @@ def projetos():
         }
     ]
     return render_template("projetos.html", projects=projects)
+
 
 @app.route("/contato", methods=["GET", "POST"])
 def contato():
